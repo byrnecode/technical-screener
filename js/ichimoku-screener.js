@@ -77,14 +77,14 @@ var ICHIMOKU = (function () {
 		// 				 'below' if Current Price is lower than Kijun-Sen,
 		// 				 'cross' if Current Price is equal than Kijun-Sen
 		// ========================================================================
-		PKCross: function (currentPrice, kijunSen) {
-			if (currentPrice > kijunSen) {
+		PKCross: function (lastPrice, kijunSen) {
+			if (lastPrice > kijunSen) {
 				return 'above';
 			}
-			else if (currentPrice < kijunSen) {
+			else if (lastPrice < kijunSen) {
 				return 'below';
 			}
-			else if (currentPrice === kijunSen) {
+			else if (lastPrice === kijunSen) {
 				return 'cross';
 			}
 			else {
@@ -103,8 +103,14 @@ var ICHIMOKU = (function () {
 			if ((lastPrice > senkouSpanA) && (lastPrice > senkouSpanB)) {
 				return 'above';
 			}
-			else if ((lastPrice < senkouSpanA) && (lastPrice > senkouSpanB)) {
+			else if ( (senkouSpanA > senkouSpanB) && (lastPrice === senkouSpanA) || (senkouSpanB > senkouSpanA) && (lastPrice === senkouSpanB) ) {
+				return 'top-edge';
+			}
+			else if ( ((lastPrice < senkouSpanA) && (lastPrice > senkouSpanB)) || ((lastPrice > senkouSpanA) && (lastPrice < senkouSpanB)) ) {
 				return 'inside';
+			}
+			else if ( (senkouSpanA > senkouSpanB) && (lastPrice === senkouSpanB) || (senkouSpanB > senkouSpanA) && (lastPrice === senkouSpanA) ) {
+				return 'bottom-edge';
 			}
 			else if ((lastPrice < senkouSpanA) && (lastPrice < senkouSpanB)) {
 				return 'below';
@@ -154,6 +160,7 @@ var ICHIMOKU = (function () {
 				senkouSpanB = +senkouSpanB.toFixed(4);
 				
 				// ichimoku screener
+				lastPrice = parseFloat(lastPrice);
 				var tkCross = ICHIMOKU.TKCross(tenkanSen, kijunSen),
 						pkCross = ICHIMOKU.PKCross(lastPrice, kijunSen),
 						priceToCloud = ICHIMOKU.priceToCloud(lastPrice, senkouSpanA, senkouSpanB);

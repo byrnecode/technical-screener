@@ -26,11 +26,11 @@ var ICHIMOKU = (function () {
 		// Method to get certain period of days
 		// Params: (Array/Object) data from API,
 		// 				 (Int/Float) past number of days,
-		// 				 (Int/Float) offset number of days to start from counting
+		// 				 (Int/Float) offset number of days to start from counting (optional)
 		// Return: (Array/Object) trimed period of days from API data
 		// ========================================================================
-		getPeriod: function (arrData, backtrack, offset) {
-			var periods = arrData.slice(backtrack, offset);
+		getPeriod: function (data, backtrack, offset) {
+			var periods = data.slice(backtrack, offset);
 			return periods;
 		},
 
@@ -226,7 +226,7 @@ var ICHIMOKU = (function () {
 				$tkCrossContainer.html(tkCross);
 				$pkCrossContainer.html(pkCross);
 				$priceCloudContainer.html(priceToCloud);
-				$chikouCloudContainer.html(cloudFuture);
+				$chikouCloudContainer.html(chikouToCloud);
 				$cloudFutureContainer.html(cloudFuture);
 				
 			})
@@ -250,10 +250,31 @@ var ICHIMOKU = (function () {
 		// ========================================================================
 		// Method to compute for Tenkan-Sen, Kijun-Sen, and Senkou-Span-B
 		// because they share the same formula but with different parameters
-		// Params: (Object) data, backtrack, offset
+		// Params: (Object) data, backtrack, offset (optional)
 		// Return: (Int/Float) calculated value
 		// ========================================================================
 		getIndicator: function () {
+			
+			var data = arguments[0],
+					backtrack = arguments[1],
+					offset = arguments[2],
+					hl,
+					highestHigh,
+					lowestLow,
+					result;
+			
+			// get highest high and lowest low of data
+			hl = ICHIMOKU.getHLOC(data, backtrack, offset);
+			highestHigh = hl.highestHigh;
+			lowestLow = hl.lowestLow;
+
+			// compute Tenkan-Sen, Kijun-Sen, Senkou-Span-B
+			result = (highestHigh + lowestLow) / 2;
+			return result;
+			
+		},
+		
+		getHLOC: function () {
 			
 			var data = arguments[0],
 					backtrack = arguments[1],
@@ -263,26 +284,52 @@ var ICHIMOKU = (function () {
 					lowArr = [],
 					highestHigh,
 					lowestLow,
-					result;
+					high,
+					low,
+					open,
+					close;
 			
-			// get only last 9 periods, add to array
+			// get only last N periods, add to array
 			periodArr = ICHIMOKU.getPeriod(data, backtrack, offset);
+			
+			// if greater than one day, get highest high and lowest low
+			if (periodArr.length > 1) {
+				
+				$.each(periodArr, function(index, quote) {
+					// get only the Highs and add to array
+					highArr.push(quote.High);
+					// get only the Lows and add to array
+					lowArr.push(quote.Low);
+				});
 
-			$.each(periodArr, function(index, quote){
-				// get only the Highs and add to array
-				highArr.push(quote.High);
-				// get only the Lows and add to array
-				lowArr.push(quote.Low);
-			});
+				//get highest High
+				highestHigh = ICHIMOKU.getHigh(highArr);
+				// get lowest Low
+				lowestLow = ICHIMOKU.getLow(lowArr);
 
-			//get highest High
-			highestHigh = ICHIMOKU.getHigh(highArr);
-			// get lowest Low
-			lowestLow = ICHIMOKU.getLow(lowArr);
+				return {
+					highestHigh: highestHigh,
+					lowestLow: lowestLow
+				};
+				
+			}
+			// else, get only the previous day HLOC
+			else {
+				
+				high = periodArr[0].High;
+				low = periodArr[0].Low;
+				open = periodArr[0].Open;
+				close = periodArr[0].Close;
+				
+				return {
+					high: high,
+					low: low,
+					open: open,
+					close: close
+				};
+				
+			}
 
-			// compute Tenkan-Sen, Kijun-Sen, Senkou-Span-B
-			result = (highestHigh + lowestLow) / 2;
-			return result;
 		},
 		
 		// ========================================================================

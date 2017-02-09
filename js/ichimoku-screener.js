@@ -4,19 +4,26 @@ var ICHIMOKU = (function () {
 	
 	// the last number of periods/days that is included in the formula
 	// negative value means going back on past N days
-	const TENKAN_BACKTRACK = -9, // past 9 periods
+	const LAST_DAY = -1, // past 1 day
+				
+				TENKAN_BACKTRACK = -9, // past 9 periods
 				KIJUN_BACKTRACK = -26, // past 26 periods
-				SSA_TS_BACKTRACK = -34, // past 9 periods and plotted 26 periods backwards
-				SSA_KS_BACKTRACK = -51, // past 26 periods and plotted 26 periods backward
+				
+				SSA_TS_BACKTRACK = -35, // past 9 periods and plotted 26 periods backwards
+				SSA_KS_BACKTRACK = -52, // past 26 periods and plotted 26 periods backward
 				SSA_OFFSET = -26, // past 26 periods
+				
 				SSB_BACKTRACK = -78, // past 52 periods and plotted 26 periods backwards
 				SSB_OFFSET = -26, // past 26 periods
+				
 				FUTURE_SSB_BACKTRACK = -52, // past 52 periods
+				
+				CHIKOU_SSA_TS_BACKTRACK = -61, // past 9 periods and plotted 52 periods backwards
+				CHIKOU_SSA_KS_BACKTRACK = -78, // past 26 periods and plotted 52 periods backward
+				CHIKOU_SSA_OFFSET = -52, // past 52 periods
+				
 				CHIKOU_SSB_BACKTRACK = -104, // past 52 periods and plotted 52 periods backwards
-				CHIKOU_SSB_OFFSET = -52, // past 52 periods
-				CHIKOU_SSA_TS_BACKTRACK = -60, // past 9 periods and plotted 52 periods backwards
-				CHIKOU_SSA_KS_BACKTRACK = -77, // past 26 periods and plotted 52 periods backward
-				CHIKOU_SSA_OFFSET = -52; // past 52 periods
+				CHIKOU_SSB_OFFSET = -52; // past 52 periods
 
 
 	// PUBLIC FUNCTIONS
@@ -202,13 +209,13 @@ var ICHIMOKU = (function () {
 				kijunSen = +kijunSen.toFixed(4);
 				senkouSpanA = +senkouSpanA.toFixed(4);
 				senkouSpanB = +senkouSpanB.toFixed(4);
-				futureSenkouSpanB = +futureSenkouSpanB.toFixed(4);
 				futureSenkouSpanA = +futureSenkouSpanA.toFixed(4);
-				chikouSenkouSpanB = +futureSenkouSpanA.toFixed(4);
-				chikouSenkouSpanA = +futureSenkouSpanA.toFixed(4);
+				futureSenkouSpanB = +futureSenkouSpanB.toFixed(4);
+				chikouSenkouSpanA = +chikouSenkouSpanA.toFixed(4);
+				chikouSenkouSpanB = +chikouSenkouSpanB.toFixed(4);
 				
 				// debugging
-				console.log(stock + ': ' + futureSenkouSpanA + ', ' + futureSenkouSpanB);
+				console.log(stock + ': ' + chikouSenkouSpanA + ', ' + chikouSenkouSpanB);
 				
 				// ichimoku screener
 				lastPrice = parseFloat(lastPrice);
@@ -228,6 +235,13 @@ var ICHIMOKU = (function () {
 				$priceCloudContainer.html(priceToCloud);
 				$chikouCloudContainer.html(chikouToCloud);
 				$cloudFutureContainer.html(cloudFuture);
+				
+				// get last HLOC
+				var hloc = ICHIMOKU.getHLOC(data, LAST_DAY),
+						high = hloc.high,
+						low = hloc.low,
+						open = hloc.open,
+						close = hloc.close;
 				
 			})
 			.fail(function () {
@@ -313,8 +327,8 @@ var ICHIMOKU = (function () {
 				};
 				
 			}
-			// else, get only the previous day HLOC
-			else {
+			// else, get only the last day HLOC
+			else if (periodArr.length === 1) {
 				
 				high = periodArr[0].High;
 				low = periodArr[0].Low;

@@ -10,7 +10,13 @@ var ICHIMOKU = (function () {
 				SSA_KS_BACKTRACK = -51, // past 26 periods and plotted 26 periods backward
 				SSA_OFFSET = -26, // past 26 periods
 				SSB_BACKTRACK = -78, // past 52 periods and plotted 26 periods backwards
-				SSB_OFFSET = -26; // past 26 periods
+				SSB_OFFSET = -26, // past 26 periods
+				FUTURE_SSB_BACKTRACK = -52, // past 52 periods
+				CHIKOU_SSB_BACKTRACK = -104, // past 52 periods and plotted 52 periods backwards
+				CHIKOU_SSB_OFFSET = -52, // past 52 periods
+				CHIKOU_SSA_TS_BACKTRACK = -60, // past 9 periods and plotted 52 periods backwards
+				CHIKOU_SSA_KS_BACKTRACK = -77, // past 26 periods and plotted 52 periods backward
+				CHIKOU_SSA_OFFSET = -52; // past 52 periods
 
 
 	// PUBLIC FUNCTIONS
@@ -93,27 +99,52 @@ var ICHIMOKU = (function () {
 		},
 		
 		// ========================================================================
-		// Method to check Price action relative to Cloud
-		// Params: (Int/Float) Current Price, Senkou-Span-A, Senkou-Span-B
-		// Return: (String) 'above' if Current Price is above the Cloud,
-		// 				 'inside' if Current Price is inside the Cloud,
-		// 				 'below' if Current Price is below the Cloud
+		// Method to check Subject relative to Cloud
+		// the 'Subject' can be the 'Last Price' or the 'Chikou-Span'
+		// Params: (Int/Float) Subject, Senkou-Span-A, Senkou-Span-B
+		// Return: (String) 'above' if Subject is above the Cloud,
+		// 				 'top-edge' if Subject is equal to Senkou-Span-A,
+		// 				 'inside' if Subject is inside the Cloud,
+		// 				 'bottom-edge' if Subject is equal to Senkou-Span-B,
+		// 				 'below' if Subject is below the Cloud
 		// ========================================================================
-		priceToCloud: function (lastPrice, senkouSpanA, senkouSpanB) {
-			if ((lastPrice > senkouSpanA) && (lastPrice > senkouSpanB)) {
+		relativeToCloud: function (subject, senkouSpanA, senkouSpanB) {
+			if ((subject > senkouSpanA) && (subject > senkouSpanB)) {
 				return 'above';
 			}
-			else if ( (senkouSpanA > senkouSpanB) && (lastPrice === senkouSpanA) || (senkouSpanB > senkouSpanA) && (lastPrice === senkouSpanB) ) {
+			else if ( (senkouSpanA > senkouSpanB) && (subject === senkouSpanA) || (senkouSpanB > senkouSpanA) && (subject === senkouSpanB) ) {
 				return 'top-edge';
 			}
-			else if ( ((lastPrice < senkouSpanA) && (lastPrice > senkouSpanB)) || ((lastPrice > senkouSpanA) && (lastPrice < senkouSpanB)) ) {
+			else if ( ((subject < senkouSpanA) && (subject > senkouSpanB)) || ((subject > senkouSpanA) && (subject < senkouSpanB)) ) {
 				return 'inside';
 			}
-			else if ( (senkouSpanA > senkouSpanB) && (lastPrice === senkouSpanB) || (senkouSpanB > senkouSpanA) && (lastPrice === senkouSpanA) ) {
+			else if ( (senkouSpanA > senkouSpanB) && (subject === senkouSpanB) || (senkouSpanB > senkouSpanA) && (subject === senkouSpanA) ) {
 				return 'bottom-edge';
 			}
-			else if ((lastPrice < senkouSpanA) && (lastPrice < senkouSpanB)) {
+			else if ((subject < senkouSpanA) && (subject < senkouSpanB)) {
 				return 'below';
+			}
+			else {
+				return 'unknown';
+			}
+		},
+		
+		// ========================================================================
+		// Method to check future Cloud values
+		// Params: (Int/Float) Future Senkou-Span-A, Future Senkou-Span-B
+		// Return: (String) 'bullish' if Senkou-Span-A is above Senkou-Span-B,
+		// 				 'twist' if Senkou-Span-A is equal Senkou-Span-B,
+		// 				 'bearish' if Senkou-Span-A is below Senkou-Span-B
+		// ========================================================================
+		cloudFuture: function (futureSenkouSpanA, futureSenkouSpanB) {
+			if (futureSenkouSpanA > futureSenkouSpanB) {
+				return 'bullish';
+			}
+			else if (futureSenkouSpanA < futureSenkouSpanB) {
+				return 'bearish';
+			}
+			else if (futureSenkouSpanA === futureSenkouSpanB) {
+				return 'twist';
 			}
 			else {
 				return 'unknown';
@@ -128,13 +159,16 @@ var ICHIMOKU = (function () {
 		
 			var stock = context.find('.stock').html(),
 					lastPrice = context.find('.last-price').html(),
+					chikouSpan = context.find('.chikou-span').html(),
 					$tenkanContainer = context.find('.tenkan-sen'),
 					$kijunContainer = context.find('.kijun-sen'),
 					$ssaContainer = context.find('.senkou-span-a'),
 					$ssbContainer = context.find('.senkou-span-b'),
 					$tkCrossContainer = context.find('.tk-cross'),
 					$pkCrossContainer = context.find('.pk-cross'),
-					$priceCloudContainer = context.find('.price-to-cloud');
+					$priceCloudContainer = context.find('.price-to-cloud'),
+					$chikouCloudContainer = context.find('.chikou-to-cloud'),
+					$cloudFutureContainer = context.find('.cloud-future');
 
 			// get data from API
 			$.ajax({
@@ -153,17 +187,36 @@ var ICHIMOKU = (function () {
 						ks = ICHIMOKU.getIndicator(data, SSA_KS_BACKTRACK, SSA_OFFSET),
 						senkouSpanA = (ts + ks) / 2;
 				
+				// get the 'future' cloud values
+				var futureSenkouSpanB = ICHIMOKU.getIndicator(data, FUTURE_SSB_BACKTRACK),
+						futureSenkouSpanA = (tenkanSen + kijunSen) / 2;
+				
+				// get the cloud values relative to Chikou-Span
+				var chikouSenkouSpanB = ICHIMOKU.getIndicator(data, CHIKOU_SSB_BACKTRACK, CHIKOU_SSB_OFFSET),
+						cts = ICHIMOKU.getIndicator(data, CHIKOU_SSA_TS_BACKTRACK, CHIKOU_SSA_OFFSET),
+						cks = ICHIMOKU.getIndicator(data, CHIKOU_SSA_KS_BACKTRACK, CHIKOU_SSA_OFFSET), 
+						chikouSenkouSpanA = (cts + cks) / 2;
+				
 				// round-off to 4 decimal places, and remove trailing zeros
 				tenkanSen = +tenkanSen.toFixed(4);
 				kijunSen = +kijunSen.toFixed(4);
 				senkouSpanA = +senkouSpanA.toFixed(4);
 				senkouSpanB = +senkouSpanB.toFixed(4);
+				futureSenkouSpanB = +futureSenkouSpanB.toFixed(4);
+				futureSenkouSpanA = +futureSenkouSpanA.toFixed(4);
+				chikouSenkouSpanB = +futureSenkouSpanA.toFixed(4);
+				chikouSenkouSpanA = +futureSenkouSpanA.toFixed(4);
+				
+				// debugging
+				console.log(stock + ': ' + futureSenkouSpanA + ', ' + futureSenkouSpanB);
 				
 				// ichimoku screener
 				lastPrice = parseFloat(lastPrice);
 				var tkCross = ICHIMOKU.TKCross(tenkanSen, kijunSen),
 						pkCross = ICHIMOKU.PKCross(lastPrice, kijunSen),
-						priceToCloud = ICHIMOKU.priceToCloud(lastPrice, senkouSpanA, senkouSpanB);
+						priceToCloud = ICHIMOKU.relativeToCloud(lastPrice, senkouSpanA, senkouSpanB),
+						chikouToCloud = ICHIMOKU.relativeToCloud(chikouSpan, chikouSenkouSpanA, chikouSenkouSpanB),
+						cloudFuture = ICHIMOKU.cloudFuture(futureSenkouSpanA, futureSenkouSpanB);
 				
 				// display caculated values
 				$tenkanContainer.html(tenkanSen);
@@ -173,6 +226,8 @@ var ICHIMOKU = (function () {
 				$tkCrossContainer.html(tkCross);
 				$pkCrossContainer.html(pkCross);
 				$priceCloudContainer.html(priceToCloud);
+				$chikouCloudContainer.html(cloudFuture);
+				$cloudFutureContainer.html(cloudFuture);
 				
 			})
 			.fail(function () {
@@ -185,6 +240,8 @@ var ICHIMOKU = (function () {
 				$tkCrossContainer.html('failed..');
 				$pkCrossContainer.html('failed..');
 				$priceCloudContainer.html('failed..');
+				$chikouCloudContainer.html('failed..');
+				$cloudFutureContainer.html('failed..');
 				
 			});
 
@@ -250,8 +307,8 @@ var ICHIMOKU = (function () {
 					'<td class="tk-cross"></td>' +
 					'<td class="pk-cross"></td>' +
 					'<td class="price-to-cloud"></td>' +
-					'<td class="bright-future"></td>' +
-					'<td class="dark-future"></td>' +
+					'<td class="chikou-to-cloud"></td>' +
+					'<td class="cloud-future"></td>' +
 				'</tr>'
 			);
 
@@ -262,7 +319,7 @@ var ICHIMOKU = (function () {
 		// ========================================================================
 		setIchimokuData: function () {
 			// display loading status
-			$('.tenkan-sen, .kijun-sen, .senkou-span-a, .senkou-span-b, .tk-cross, .pk-cross, .price-to-cloud').html('loading..');
+			$('.tenkan-sen, .kijun-sen, .senkou-span-a, .senkou-span-b, .tk-cross, .pk-cross, .price-to-cloud, .chikou-to-cloud, .cloud-future').html('loading..');
 			
 			$('#main-table > tbody > tr').each( function () {
 				ICHIMOKU.getHistoricalData($(this));
@@ -305,4 +362,10 @@ var ICHIMOKU = (function () {
 
 })(); // end ICHIMOKU API
 
-//ICHIMOKU.initData();
+$(document).ready( function () {
+	
+	$('#ichimoku-screener').click( function () {
+		ICHIMOKU.initData();
+	});
+	
+});

@@ -144,9 +144,8 @@ var ICHIMOKU = (function () {
 		getHistoricalData: function (context) {
 		
 			var stock = context.find('.stock').html(),
-					$lastPriceContainer = context.find('.last-price'),
-					$chikouSpanContainer = context.find('.chikou-span'),
-					$volumeContainer = context.find('.volume'),
+					lastPrice = context.find('.last-price').html(),
+					chikouSpan = context.find('.chikou-span').html(),
 					$tenkanContainer = context.find('.tenkan-sen'),
 					$kijunContainer = context.find('.kijun-sen'),
 					$ssaContainer = context.find('.senkou-span-a'),
@@ -184,14 +183,6 @@ var ICHIMOKU = (function () {
 						cks = ICHIMOKU.getIndicator(data, CHIKOU_SSA_KS_BACKTRACK, CHIKOU_SSA_OFFSET), 
 						chikouSenkouSpanA = (cts + cks) / 2;
 				
-				// get last HLOC
-				var hloc = ICHIMOKU.getHLOC(data, LAST_DAY),
-						high = hloc.high,
-						low = hloc.low,
-						open = hloc.open,
-						close = hloc.close,
-						volume = hloc.volume;
-				
 				// round-off to 4 decimal places, and remove trailing zeros
 				tenkanSen = +tenkanSen.toFixed(4);
 				kijunSen = +kijunSen.toFixed(4);
@@ -206,17 +197,14 @@ var ICHIMOKU = (function () {
 				console.log(stock + ' - chikou ssa: ' + chikouSenkouSpanA + ', chikou ssb: ' + chikouSenkouSpanB + ' - futureCloud ssa: ' + futureSenkouSpanA + ', futureCloud ssb: ' + futureSenkouSpanB);
 				
 				// ichimoku screener
-				close = parseFloat(close);
+				lastPrice = parseFloat(lastPrice);
 				var tkCross = ICHIMOKU.relativeToKijun(tenkanSen, kijunSen),
-						pkCross = ICHIMOKU.relativeToKijun(close, kijunSen),
-						priceToCloud = ICHIMOKU.relativeToCloud(close, senkouSpanA, senkouSpanB),
-						chikouToCloud = ICHIMOKU.relativeToCloud(close, chikouSenkouSpanA, chikouSenkouSpanB),
+						pkCross = ICHIMOKU.relativeToKijun(lastPrice, kijunSen),
+						priceToCloud = ICHIMOKU.relativeToCloud(lastPrice, senkouSpanA, senkouSpanB),
+						chikouToCloud = ICHIMOKU.relativeToCloud(chikouSpan, chikouSenkouSpanA, chikouSenkouSpanB),
 						cloudFuture = ICHIMOKU.cloudFuture(futureSenkouSpanA, futureSenkouSpanB);
 				
 				// display caculated values
-				$lastPriceContainer.html(close);
-				$chikouSpanContainer.html(close);
-				$volumeContainer.html(volume);
 				$tenkanContainer.html(tenkanSen);
 				$kijunContainer.html(kijunSen);
 				$ssaContainer.html(senkouSpanA),
@@ -227,7 +215,12 @@ var ICHIMOKU = (function () {
 				$chikouCloudContainer.html(chikouToCloud);
 				$cloudFutureContainer.html(cloudFuture);
 				
-				
+				// get last HLOC
+				var hloc = ICHIMOKU.getHLOC(data, LAST_DAY),
+						high = hloc.high,
+						low = hloc.low,
+						open = hloc.open,
+						close = hloc.close;
 				
 			})
 			.fail(function () {
@@ -235,9 +228,6 @@ var ICHIMOKU = (function () {
 				var failedStatus = 'failed..';
 				
 				// display failed status
-				$lastPriceContainer.html(failedStatus);
-				$chikouSpanContainer.html(failedStatus);
-				$volumeContainer.html(failedStatus);
 				$tenkanContainer.html(failedStatus);
 				$kijunContainer.html(failedStatus);
 				$ssaContainer.html(failedStatus),
@@ -297,8 +287,7 @@ var ICHIMOKU = (function () {
 					high,
 					low,
 					open,
-					close,
-					volume;
+					close;
 			
 			// get only last N periods, add to array
 			periodArr = ICHIMOKU.getPeriod(data, backtrack, offset);
@@ -331,14 +320,12 @@ var ICHIMOKU = (function () {
 				low = periodArr[0].Low;
 				open = periodArr[0].Open;
 				close = periodArr[0].Close;
-				volume = periodArr[0].Volume;
 				
 				return {
 					high: high,
 					low: low,
 					open: open,
-					close: close,
-					volume: volume
+					close: close
 				};
 				
 			}
@@ -354,20 +341,20 @@ var ICHIMOKU = (function () {
 			// loop through stocksList
 			$.each(stocksList, function (index, stock) {
 				
-				var symbol = stock.securitySymbol;
-//						lastPrice = stock.price.amount,
-//						volume = stock.volume;
+				var symbol = stock.symbol,
+						lastPrice = stock.price.amount,
+						volume = stock.volume;
 
 				$('#main-table > tbody').append(
 					'<tr>' +
 						'<td class="stock">' + symbol + '</td>' +
-						'<td class="last-price"></td>' +
-						'<td class="volume"></td>' +
+						'<td class="last-price">' + lastPrice + '</td>' +
+						'<td class="volume">' + volume + '</td>' +
 						'<td class="tenkan-sen"></td>' +
 						'<td class="kijun-sen"></td>' +
 						'<td class="senkou-span-a"></td>' +
 						'<td class="senkou-span-b"></td>' +
-						'<td class="chikou-span"></td>' +
+						'<td class="chikou-span">' + lastPrice + '</td>' +
 						'<td class="tk-cross"></td>' +
 						'<td class="pk-cross"></td>' +
 						'<td class="price-to-cloud"></td>' +
@@ -385,7 +372,7 @@ var ICHIMOKU = (function () {
 		// ========================================================================
 		setIchimokuData: function () {
 			// display loading status
-			$('.last-price, .chikou-span, .volume, .tenkan-sen, .kijun-sen, .senkou-span-a, .senkou-span-b, .tk-cross, .pk-cross, .price-to-cloud, .chikou-to-cloud, .cloud-future').html('loading..');
+			$('.tenkan-sen, .kijun-sen, .senkou-span-a, .senkou-span-b, .tk-cross, .pk-cross, .price-to-cloud, .chikou-to-cloud, .cloud-future').html('loading..');
 			
 			$('#main-table > tbody > tr').each( function () {
 				ICHIMOKU.getHistoricalData($(this));
@@ -400,55 +387,32 @@ var ICHIMOKU = (function () {
 			// set quote status
 			$('.quote-status').html('Fetching data...');
 			
-//			// setup ajax to actually call the API
-//			$.ajax({
-//				url: 'https://cors-anywhere.herokuapp.com/http://phisix-api2.appspot.com/stocks.json',
-//				dataType: "json"
-//			})
-//			.done(function (data) {
-//				
-//				var stocksList = data.stock,
-//						quoteStatus = data.as_of,
-//						quoteStatus = new Date(quoteStatus).toLocaleString();
-//
-//				// set quote status
-//				$('.quote-status').html('Last Updated: ' + quoteStatus);
-//
-//				// call function that populates stock-list
-//				ICHIMOKU.populateStockList(stocksList);
-//				
-//				// set Ichimoku data
-//				ICHIMOKU.setIchimokuData();
-//
-//			})
-//			.fail(function () {
-//				
-//				// set quote status
-//				$('.quote-status').html('Failed to acquire the latest data, try refreshing the browser.');
-//				
-//			});
-			
-			// get data from API
+			// setup ajax to actually call the API
 			$.ajax({
-				url: 'https://cors-anywhere.herokuapp.com/http://api.manilainvestor.com/v1/stocks',
+				url: 'https://cors-anywhere.herokuapp.com/http://phisix-api2.appspot.com/stocks.json',
 				dataType: "json"
 			})
 			.done(function (data) {
 				
+				var stocksList = data.stock,
+						quoteStatus = data.as_of,
+						quoteStatus = new Date(quoteStatus).toLocaleString();
+
 				// set quote status
-				var quoteStatus = new Date().toLocaleString();
 				$('.quote-status').html('Last Updated: ' + quoteStatus);
-				
+
 				// call function that populates stock-list
-				ICHIMOKU.populateStockList(data);
+				ICHIMOKU.populateStockList(stocksList);
 				
 				// set Ichimoku data
 				ICHIMOKU.setIchimokuData();
-				
+
 			})
-			.fail (function () {
+			.fail(function () {
+				
 				// set quote status
 				$('.quote-status').html('Failed to acquire the latest data, try refreshing the browser.');
+				
 			});
 		}
 

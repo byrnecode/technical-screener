@@ -1,6 +1,6 @@
 var ICHIMOKU = (function () {
 
-	// PRIVATE FUNCTIONS
+	// PRIVATE METHODS and PROPERTIES
 	
 	// the last number of periods/days that is included in the formula
 	// negative value means going back on past N days
@@ -24,16 +24,16 @@ var ICHIMOKU = (function () {
 				
 				CHIKOU_SSB_BACKTRACK = -104, // past 52 periods and plotted 52 periods backwards
 				CHIKOU_SSB_OFFSET = -52; // past 52 periods
-
-
-	// PUBLIC FUNCTIONS
+	
+	
+	// PUBLIC METHODS and PROPERTIES
 	return {
 
 		// ========================================================================
 		// Method to get certain period of days
 		// Params: (Array/Object) data from API,
-		// 				 (Int/Float) past number of days,
-		// 				 (Int/Float) offset number of days to start from counting (optional)
+		// 				 (Int) past number of days,
+		// 				 (Int) offset number of days to start from counting (optional)
 		// Return: (Array/Object) trimed period of days from API data
 		// ========================================================================
 		getPeriod: function (data, backtrack, offset) {
@@ -62,42 +62,21 @@ var ICHIMOKU = (function () {
 		},
 		
 		// ========================================================================
-		// Method to check for T-K Cross
-		// Params: (Int/Float) Tenkan-Sen, Kijun-Sen
-		// Return: (String) 'above' if Tenkan-Sen is higher than Kijun-Sen,
-		// 				 'below' if Tenkan-Sen is lower than Kijun-Sen,
-		// 				 'cross' if Tenkan-Sen is equal than Kijun-Sen
+		// Method to check Subject relative to Kijun-Sen
+		// the 'Subject' can be the 'Tenkan-Sen' or the 'Last Price'
+		// Params: (Int/Float) Subject, Kijun-Sen
+		// Return: (String) 'above' if Subject is higher than Kijun-Sen,
+		// 				 'below' if Subject is lower than Kijun-Sen,
+		// 				 'cross' if Subject is equal to Kijun-Sen
 		// ========================================================================
-		TKCross: function (tenkanSen, kijunSen) {
-			if (tenkanSen > kijunSen) {
+		relativeToKijun: function (subject, kijunSen) {
+			if (subject > kijunSen) {
 				return 'above';
 			}
-			else if (tenkanSen < kijunSen) {
+			else if (subject < kijunSen) {
 				return 'below';
 			}
-			else if (tenkanSen === kijunSen) {
-				return 'cross';
-			}
-			else {
-				return 'unknown';
-			}
-		},
-		
-		// ========================================================================
-		// Method to check for P-K Cross
-		// Params: (Int/Float) Current Price, Kijun-Sen
-		// Return: (String) 'above' if Current Price is higher than Kijun-Sen,
-		// 				 'below' if Current Price is lower than Kijun-Sen,
-		// 				 'cross' if Current Price is equal than Kijun-Sen
-		// ========================================================================
-		PKCross: function (lastPrice, kijunSen) {
-			if (lastPrice > kijunSen) {
-				return 'above';
-			}
-			else if (lastPrice < kijunSen) {
-				return 'below';
-			}
-			else if (lastPrice === kijunSen) {
+			else if (subject === kijunSen) {
 				return 'cross';
 			}
 			else {
@@ -110,9 +89,9 @@ var ICHIMOKU = (function () {
 		// the 'Subject' can be the 'Last Price' or the 'Chikou-Span'
 		// Params: (Int/Float) Subject, Senkou-Span-A, Senkou-Span-B
 		// Return: (String) 'above' if Subject is above the Cloud,
-		// 				 'top-edge' if Subject is equal to Senkou-Span-A,
+		// 				 'top-edge' if Subject is on top edge of Cloud,
 		// 				 'inside' if Subject is inside the Cloud,
-		// 				 'bottom-edge' if Subject is equal to Senkou-Span-B,
+		// 				 'bottom-edge' if Subject is on bottom edge of Cloud,
 		// 				 'below' if Subject is below the Cloud
 		// ========================================================================
 		relativeToCloud: function (subject, senkouSpanA, senkouSpanB) {
@@ -215,12 +194,12 @@ var ICHIMOKU = (function () {
 				chikouSenkouSpanB = +chikouSenkouSpanB.toFixed(4);
 				
 				// debugging
-				console.log(stock + ': ' + chikouSenkouSpanA + ', ' + chikouSenkouSpanB);
+				console.log(stock + ' - chikou ssa: ' + chikouSenkouSpanA + ', chikou ssb: ' + chikouSenkouSpanB + ' - futureCloud ssa: ' + futureSenkouSpanA + ', futureCloud ssb: ' + futureSenkouSpanB);
 				
 				// ichimoku screener
 				lastPrice = parseFloat(lastPrice);
-				var tkCross = ICHIMOKU.TKCross(tenkanSen, kijunSen),
-						pkCross = ICHIMOKU.PKCross(lastPrice, kijunSen),
+				var tkCross = ICHIMOKU.relativeToKijun(tenkanSen, kijunSen),
+						pkCross = ICHIMOKU.relativeToKijun(lastPrice, kijunSen),
 						priceToCloud = ICHIMOKU.relativeToCloud(lastPrice, senkouSpanA, senkouSpanB),
 						chikouToCloud = ICHIMOKU.relativeToCloud(chikouSpan, chikouSenkouSpanA, chikouSenkouSpanB),
 						cloudFuture = ICHIMOKU.cloudFuture(futureSenkouSpanA, futureSenkouSpanB);
@@ -246,16 +225,18 @@ var ICHIMOKU = (function () {
 			})
 			.fail(function () {
 				
+				var failedStatus = 'failed..';
+				
 				// display failed status
-				$tenkanContainer.html('failed..');
-				$kijunContainer.html('failed..');
-				$ssaContainer.html('failed..'),
-				$ssbContainer.html('failed..');
-				$tkCrossContainer.html('failed..');
-				$pkCrossContainer.html('failed..');
-				$priceCloudContainer.html('failed..');
-				$chikouCloudContainer.html('failed..');
-				$cloudFutureContainer.html('failed..');
+				$tenkanContainer.html(failedStatus);
+				$kijunContainer.html(failedStatus);
+				$ssaContainer.html(failedStatus),
+				$ssbContainer.html(failedStatus);
+				$tkCrossContainer.html(failedStatus);
+				$pkCrossContainer.html(failedStatus);
+				$priceCloudContainer.html(failedStatus);
+				$chikouCloudContainer.html(failedStatus);
+				$cloudFutureContainer.html(failedStatus);
 				
 			});
 
@@ -264,7 +245,7 @@ var ICHIMOKU = (function () {
 		// ========================================================================
 		// Method to compute for Tenkan-Sen, Kijun-Sen, and Senkou-Span-B
 		// because they share the same formula but with different parameters
-		// Params: (Object) data, backtrack, offset (optional)
+		// Params: (Object) data, (Int) backtrack, (Int) offset (optional)
 		// Return: (Int/Float) calculated value
 		// ========================================================================
 		getIndicator: function () {
@@ -288,6 +269,11 @@ var ICHIMOKU = (function () {
 			
 		},
 		
+		// ========================================================================
+		// Method to get HLOC (High,Low,Open,Close) data
+		// Params: (Object) data, (Int) backtrack, (Int) offset (optional)
+		// Return: (Object) HLOC
+		// ========================================================================
 		getHLOC: function () {
 			
 			var data = arguments[0],
@@ -348,30 +334,36 @@ var ICHIMOKU = (function () {
 		
 		// ========================================================================
 		// Method to populate the table with stock list
+		// Params: (Object) Stock list with data
 		// ========================================================================
-		populateStockList: function (stock) {
+		populateStockList: function (stocksList) {
+			
+			// loop through stocksList
+			$.each(stocksList, function (index, stock) {
+				
+				var symbol = stock.symbol,
+						lastPrice = stock.price.amount,
+						volume = stock.volume;
 
-			var symbol = stock.symbol,
-					lastPrice = stock.price.amount,
-					volume = stock.volume;
-
-			$('#main-table > tbody').append(
-				'<tr>' +
-					'<td class="stock">' + symbol + '</td>' +
-					'<td class="last-price">' + lastPrice + '</td>' +
-					'<td class="volume">' + volume + '</td>' +
-					'<td class="tenkan-sen"></td>' +
-					'<td class="kijun-sen"></td>' +
-					'<td class="senkou-span-a"></td>' +
-					'<td class="senkou-span-b"></td>' +
-					'<td class="chikou-span">' + lastPrice + '</td>' +
-					'<td class="tk-cross"></td>' +
-					'<td class="pk-cross"></td>' +
-					'<td class="price-to-cloud"></td>' +
-					'<td class="chikou-to-cloud"></td>' +
-					'<td class="cloud-future"></td>' +
-				'</tr>'
-			);
+				$('#main-table > tbody').append(
+					'<tr>' +
+						'<td class="stock">' + symbol + '</td>' +
+						'<td class="last-price">' + lastPrice + '</td>' +
+						'<td class="volume">' + volume + '</td>' +
+						'<td class="tenkan-sen"></td>' +
+						'<td class="kijun-sen"></td>' +
+						'<td class="senkou-span-a"></td>' +
+						'<td class="senkou-span-b"></td>' +
+						'<td class="chikou-span">' + lastPrice + '</td>' +
+						'<td class="tk-cross"></td>' +
+						'<td class="pk-cross"></td>' +
+						'<td class="price-to-cloud"></td>' +
+						'<td class="chikou-to-cloud"></td>' +
+						'<td class="cloud-future"></td>' +
+					'</tr>'
+				);
+				
+			});
 
 		},
 		
@@ -391,12 +383,17 @@ var ICHIMOKU = (function () {
 		// Method to initialize table data
 		// ========================================================================
 		initData: function () {
+			
+			// set quote status
+			$('.quote-status').html('Fetching data...');
+			
 			// setup ajax to actually call the API
 			$.ajax({
 				url: 'https://cors-anywhere.herokuapp.com/http://phisix-api2.appspot.com/stocks.json',
 				dataType: "json"
 			})
 			.done(function (data) {
+				
 				var stocksList = data.stock,
 						quoteStatus = data.as_of,
 						quoteStatus = new Date(quoteStatus).toLocaleString();
@@ -404,18 +401,18 @@ var ICHIMOKU = (function () {
 				// set quote status
 				$('.quote-status').html('Last Updated: ' + quoteStatus);
 
-				// loop through the returned stocksList
-				$.each(stocksList, function (index, stock) {
-					// call function that populates stock-list
-					ICHIMOKU.populateStockList(stock);
-				});
+				// call function that populates stock-list
+				ICHIMOKU.populateStockList(stocksList);
 				
+				// set Ichimoku data
 				ICHIMOKU.setIchimokuData();
 
 			})
 			.fail(function () {
+				
 				// set quote status
 				$('.quote-status').html('Failed to acquire the latest data, try refreshing the browser.');
+				
 			});
 		}
 

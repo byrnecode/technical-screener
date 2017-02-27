@@ -142,6 +142,9 @@ var ICHIMOKU = (function () {
 		// Params: (Object) context/container of html values
 		// ========================================================================
 		getHistoricalData: function (context) {
+			
+			// display loading status
+			context.find('td').not('.stock').html('woho loading..');
 		
 			var stock = context.find('.stock').html(),
 					$lastPriceContainer = context.find('.last-price'),
@@ -226,8 +229,6 @@ var ICHIMOKU = (function () {
 				$priceCloudContainer.html(priceToCloud);
 				$chikouCloudContainer.html(chikouToCloud);
 				$cloudFutureContainer.html(cloudFuture);
-				
-				
 				
 			})
 			.fail(function () {
@@ -385,7 +386,7 @@ var ICHIMOKU = (function () {
 		// ========================================================================
 		setIchimokuData: function () {
 			// display loading status
-			$('.last-price, .chikou-span, .volume, .tenkan-sen, .kijun-sen, .senkou-span-a, .senkou-span-b, .tk-cross, .pk-cross, .price-to-cloud, .chikou-to-cloud, .cloud-future').html('loading..');
+//			$('#main-table > tbody > tr > td').not('.stock').html('loading..');
 			
 			$('#main-table > tbody > tr').each( function () {
 				ICHIMOKU.getHistoricalData($(this));

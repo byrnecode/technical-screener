@@ -144,7 +144,7 @@ var ICHIMOKU = (function () {
 		getHistoricalData: function (context) {
 			
 			// display loading status
-			context.find('td').not('.stock').html('woho loading..');
+			context.find('td').not('.stock').html('loading..');
 		
 			var stock = context.find('.stock').html(),
 					$lastPriceContainer = context.find('.last-price'),

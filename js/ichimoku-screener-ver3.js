@@ -156,9 +156,19 @@ var ICHIMOKU = (function () {
 					$chikouCloudContainer = context.find('.chikou-to-cloud'),
 					$cloudFutureContainer = context.find('.cloud-future');
 
+			function dataFilter(data, stock) {
+				let stockData = [];
+				for (const value of data) {
+				  if (value.code === stock) {
+				  	stockData.push(value)
+				  }
+				}
+				return stockData;
+			}
+
 			var data = dataFilter(historicalData, stock);
 
-			function doneTest(data) {
+			function doneDataFilter(data) {
 
 				// set Tenkan-Sen, Kijun-Sen, Senkou-Span-B
 				var tenkanSen = ICHIMOKU.getIndicator(data, TENKAN_BACKTRACK),
@@ -212,16 +222,9 @@ var ICHIMOKU = (function () {
 				$chikouCloudContainer.html(chikouToCloud);
 				$cloudFutureContainer.html(cloudFuture);
 				
-				// get last HLOC
-				// var hloc = ICHIMOKU.getHLOC(data, LAST_DAY),
-				// 		high = hloc.high,
-				// 		low = hloc.low,
-				// 		open = hloc.open,
-				// 		close = hloc.close;
-
 			}
 
-			function failTest() {
+			function failDataFilter() {
 
 				var failedStatus = 'failed..';
 				
@@ -239,11 +242,11 @@ var ICHIMOKU = (function () {
 			}
 
 			if (data.length >= 104) {
-				doneTest(data);
+				doneDataFilter(data);
 			} 
 			else {
-				console.log(`${stock} only ${data.length} periods.`)
-				failTest();
+				console.log(`Can't calculate ${stock}, only ${data.length} periods.`);
+				failDataFilter();
 			}
 
 			// get data from API

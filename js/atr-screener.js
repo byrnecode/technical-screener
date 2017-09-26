@@ -44,27 +44,31 @@ var ATR = (function () {
 			return low;
 		},
 
-		getTrueRangeA: function (quote) {
-			var tr = quote.high - quote.low;
+		// Method 1: The Current Period High minus (-) Current Period Low
+		getTrueRangeA: function (currentHigh, currentLow) {
+			var tr = currentHigh - currentLow;
 			// round-off to 4 decimal places, and remove trailing zeros
 			tr = +tr.toFixed(4);
 			return tr;
 		},
 
-		getTrueRangeB: function (previousQuote, currentQuote) {
-			var tr = currentQuote.high - previousQuote.close;
+		// Method 2: The Absolute Value (abs) of the Current Period High minus (-) The Previous Period Close
+		getTrueRangeB: function (currentHigh, previousClose) {
+			var tr = currentHigh - previousClose;
 			// round-off to 4 decimal places, and remove trailing zeros
 			tr = +tr.toFixed(4);
 			return Math.abs(tr);
 		},
 
-		getTrueRangeC: function (previousQuote, currentQuote) {
-			var tr = currentQuote.low - previousQuote.close;
+		// Method 3: The Absolute Value (abs) of the Current Period Low minus (-) The Previous Period Close
+		getTrueRangeC: function (currentLow, previousClose) {
+			var tr = currentLow - previousClose;
 			// round-off to 4 decimal places, and remove trailing zeros
 			tr = +tr.toFixed(4);
 			return Math.abs(tr);
 		},
 
+		// The True Range is the largest of the 3 methods
 		getTrueRange: function (trueRangeArr) {
 			var tr = ATR.getHigh(trueRangeArr);
 			// round-off to 4 decimal places, and remove trailing zeros
@@ -87,10 +91,11 @@ var ATR = (function () {
 					var currentQuote = quote,
 							previousQuote = array[previousDay];
 
-					var trueRangeA = ATR.getTrueRangeA(currentQuote);
-					var trueRangeB = ATR.getTrueRangeB(previousQuote, currentQuote);
-					var trueRangeC = ATR.getTrueRangeC(previousQuote, currentQuote);
+					var trueRangeA = ATR.getTrueRangeA(currentQuote.high, currentQuote.low);
+					var trueRangeB = ATR.getTrueRangeB(currentQuote.high, previousQuote.close);
+					var trueRangeC = ATR.getTrueRangeC(currentQuote.low, previousQuote.close);
 					var arr = [trueRangeA, trueRangeB, trueRangeC];
+					// get the largest value from the 3 true range
 					trueRange = ATR.getTrueRange(arr);
 					trueRangeArr.push(trueRange);
 				}

@@ -2,11 +2,12 @@ var ATR = (function () {
 
 	// PRIVATE METHODS and PROPERTIES
 	
-	// the last number of periods/days that is included in the formula
+	// periods/days that is included in the formula
 	// negative value means going back on past N days
-	const LAST_DAY = -1, // past 1 day
+	const PERIOD_SETTING = 20, // required minimum period of data
+				LAST_DAY = -1, // past 1 day
 				PREV_DAY = -2, // past 2 day
-				ATR_BACKTRACK = -20; // past 20 periods
+				ATR_BACKTRACK = PERIOD_SETTING * -2; // PERIOD_SETTING * 2 = past periods for average smoothing
 
 	// PUBLIC METHODS and PROPERTIES
 	return {
@@ -43,55 +44,81 @@ var ATR = (function () {
 			return low;
 		},
 
-		getTrueRangeA: function (data) {
-			var currentHLOC = ATR.getHLOC(data),
-					currentHigh = currentHLOC.high,
-					currentLow = currentHLOC.low;
-
-			return currentHigh - currentLow;
+		getTrueRangeA: function (quote) {
+			var tr = quote.high - quote.low;
+			// round-off to 4 decimal places, and remove trailing zeros
+			tr = +tr.toFixed(4);
+			return tr;
 		},
 
-		getTrueRangeB: function (data) {
-			var currentHLOC = ATR.getHLOC(data),
-					currentHigh = currentHLOC.high;
-
-			var prevHLOC = ATR.getHLOC(data, PREV_DAY, LAST_DAY),
-					prevClose = prevHLOC.close;
-
-			return Math.abs(currentHigh - prevClose);
+		getTrueRangeB: function (previousQuote, currentQuote) {
+			var tr = currentQuote.high - previousQuote.close;
+			// round-off to 4 decimal places, and remove trailing zeros
+			tr = +tr.toFixed(4);
+			return Math.abs(tr);
 		},
 
-		getTrueRangeC: function (data) {
-			var currentHLOC = ATR.getHLOC(data),
-					currentLow = currentHLOC.low;
-
-			var prevHLOC = ATR.getHLOC(data, PREV_DAY, LAST_DAY),
-					prevClose = prevHLOC.close;
-
-			return Math.abs(currentLow - prevClose);
+		getTrueRangeC: function (previousQuote, currentQuote) {
+			var tr = currentQuote.low - previousQuote.close;
+			// round-off to 4 decimal places, and remove trailing zeros
+			tr = +tr.toFixed(4);
+			return Math.abs(tr);
 		},
 
-		getTrueRange: function (trueRangeA, trueRangeB, trueRangeC) {
-			var truerange = ATR.getHigh(trueRangeA, trueRangeB, trueRangeC);
-			return truerange;
+		getTrueRange: function (trueRangeArr) {
+			var tr = ATR.getHigh(trueRangeArr);
+			// round-off to 4 decimal places, and remove trailing zeros
+			tr = +tr.toFixed(4);
+			return tr;
 		},
 
-		getATR: function (data) {
+		getATR: function (data, periodSetting) {
 			var period = ATR.getPeriod(data, ATR_BACKTRACK);
-			console.log(period);
-			var trueRangeArr = [];
+			var trueRangeArr = [],
+					trueRange;
 			period.forEach(function (quote, index, array) {
 				if (index === 0) {
-					var trueRangeA = ATR.getTrueRangeA(quote);
-					trueRangeArr.push(trueRangeA);
+					trueRange = ATR.getTrueRangeA(quote);
+					trueRangeArr.push(trueRange);
+					return;
 				}
 				else {
-					var trueRangeA = ATR.getTrueRangeA(quote),
-							trueRangeB = ATR.getTrueRangeB(quote),
-							trueRangeC = ATR.getTrueRangeC(quote);
-					var trueRange = ATR.getTrueRange(trueRangeA, trueRangeB, trueRangeC);
+					var previousDay = index - 1;
+					var currentQuote = quote,
+							previousQuote = array[previousDay];
+
+					var trueRangeA = ATR.getTrueRangeA(currentQuote);
+					var trueRangeB = ATR.getTrueRangeB(previousQuote, currentQuote);
+					var trueRangeC = ATR.getTrueRangeC(previousQuote, currentQuote);
+					var arr = [trueRangeA, trueRangeB, trueRangeC];
+					trueRange = ATR.getTrueRange(arr);
+					trueRangeArr.push(trueRange);
 				}
 			});
+
+			// must start with a 20-day simple average of the True Range for the initial calculation
+			// get the average of the first 20 True Range values
+			var total = 0;
+			for (var x = 0; x < periodSetting; x++) {
+				total += trueRangeArr[x];
+			}
+			var initialATR = total / periodSetting;
+
+			// slice the trueRangeArr since we already got the average of the first 20
+			var trueRangeArrFinal = trueRangeArr.slice(periodSetting);
+
+			// subsequent ATR values are smoothed
+			// Current ATR = [(Prior ATR x 19) + Current TR] / 20
+			// - Multiply the previous 14-day ATR by periodSetting - 1.
+			// - Add the most recent day's TR value.
+			// - Divide the total by periodSetting
+			var currentATR = trueRangeArrFinal.reduce(function (previousATR, currentTR, index) {
+				return ((previousATR * (periodSetting - 1)) + currentTR) / periodSetting;
+			}, initialATR);
+
+			// round-off to 4 decimal places, and remove trailing zeros
+			currentATR = +currentATR.toFixed(4);
+			return currentATR;
 		},
 		
 		// ========================================================================
@@ -117,8 +144,9 @@ var ATR = (function () {
 
 			function doneDataFilter(data) {
 
+				
 				// get atr
-				var atr = ATR.getATR(data);
+				var atr = ATR.getATR(data, PERIOD_SETTING);
 
 				// display caculated values
 				$atrValueContainer.html(atr);
@@ -134,29 +162,13 @@ var ATR = (function () {
 
 			}
 
-			if (data.length >= 20) {
+			if (data.length >= PERIOD_SETTING) {
 				doneDataFilter(data);
 			} 
 			else {
 				console.log(`Can't calculate ${stock}, only ${data.length} periods.`);
 				failDataFilter();
 			}
-
-			// get data from API
-			// $.ajax({
-			// 	url: 'https://cors-anywhere.herokuapp.com/http://pseapi.com/api/Stock/' + stock,
-			// 	dataType: "json"
-			// })
-			// .done(function (data) {
-
-				
-
-			// })
-			// .fail(function () {
-				
-				
-				
-			// });
 
 		},
 				

@@ -13,7 +13,7 @@
 <body>
 
 	<h2 class="quote-status"></h2>
-	<button id="ichimoku-screener">Ichimoku Screener</button>
+	<button id="all-screener">All Screener</button>
 
 	<table id="main-table">
 		<thead>
@@ -31,6 +31,9 @@
 				<td>Price to Cloud</td>
 				<td>Chikou to Cloud</td>
 				<td>Cloud Future</td>
+				<td>Donchain Upper</td>
+				<td>Donchain Lower</td>
+				<td>ATR</td>
 			</tr>
 		</thead>
 
@@ -44,8 +47,13 @@
 	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 	<!-- Historical Data-->
 	<script src="js/_historical-data.js"></script>
-	<!-- Ichimoku Screener JS -->
-	<script src="js/ichimoku-screener-ver3.js"></script>
+	<!-- screeners -->
+	<script src="js/all/screener.js"></script>
+	<script src="js/all/ichimoku.js"></script>
+	<script src="js/all/donchian.js"></script>
+	<script src="js/all/atr.js"></script>
+	<!-- app js -->
+	<script src="js/all/app.js"></script>
 </body>
 
 </html>

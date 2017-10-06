@@ -82,7 +82,7 @@ var ATR = (function () {
 					trueRange;
 			period.forEach(function (quote, index, array) {
 				if (index === 0) {
-					trueRange = ATR.getTrueRangeA(quote);
+					trueRange = ATR.getTrueRangeA(quote.high, quote.low);
 					trueRangeArr.push(trueRange);
 					return;
 				}

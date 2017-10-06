@@ -214,7 +214,7 @@ var ICHIMOKU = (function () {
 				// display caculated values
 				$tenkanContainer.html(tenkanSen);
 				$kijunContainer.html(kijunSen);
-				$ssaContainer.html(senkouSpanA),
+				$ssaContainer.html(senkouSpanA);
 				$ssbContainer.html(senkouSpanB);
 				$tkCrossContainer.html(tkCross);
 				$pkCrossContainer.html(pkCross);

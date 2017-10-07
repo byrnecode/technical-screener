@@ -1,3 +1,4 @@
+// DONCHIAN Module
 var DONCHIAN = (function (S) {
 
 	// ==========================================================================
@@ -11,7 +12,9 @@ var DONCHIAN = (function (S) {
 
 	function getDonchian (data, periodSetting) {
 
-		if (data.length >= periodSetting) {
+		var dataLength = data.length;
+
+		if (dataLength >= periodSetting) {
 			var donchianBacktrack = -Math.abs(periodSetting); // past 20 periods
 			// get highest high and lowest low of data
 			var hl = S.getHLOC(data, donchianBacktrack),
@@ -23,7 +26,11 @@ var DONCHIAN = (function (S) {
 			lowestLow = +lowestLow.toFixed(4);
 		} 
 		else {
-			// console.log(`Can't calculate Donchian data of ${data[0].code}, only ${data.length} periods.`);
+			
+			if (dataLength > 0) {
+				console.log(`Can't calculate Donchian data of ${data[0].code}, only ${data.length} periods.`);
+			}
+
 			var failedStatus = 'failed..';
 
 			var highestHigh = failedStatus,
@@ -45,4 +52,4 @@ var DONCHIAN = (function (S) {
 		getDonchian: getDonchian
 	};
 
-})(SCREENER); // end DONCHIAN API
+})(SCREENER); // end DONCHIAN Module

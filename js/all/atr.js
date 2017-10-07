@@ -1,3 +1,4 @@
+// ATR Module
 var ATR = (function (S) {
 
 	// ==========================================================================
@@ -44,7 +45,9 @@ var ATR = (function (S) {
 
 	function getATR (data, periodSetting) {
 
-		if (data.length >= periodSetting) {
+		var dataLength = data.length;
+
+		if (dataLength >= periodSetting) {
 			var atrBacktrack  = periodSetting * -2; // periodSetting * 2 = past periods for average smoothing
 			var period = S.getPeriod(data, atrBacktrack);
 			var trueRangeArr = [],
@@ -97,7 +100,11 @@ var ATR = (function (S) {
 			currentATR = +currentATR.toFixed(4);
 		} 
 		else {
-			// console.log(`Can't calculate ATR data of ${data[0].code}, only ${data.length} periods.`);
+
+			if (dataLength > 0) {
+				console.log(`Can't calculate ATR data of ${data[0].code}, only ${data.length} periods.`);
+			}
+
 			var currentATR = 'failed..';
 		}
 
@@ -113,4 +120,4 @@ var ATR = (function (S) {
 		getATR: getATR
 	};
 
-})(SCREENER); // end ATR API
+})(SCREENER); // end ATR Module

@@ -1,3 +1,4 @@
+// APP Module
 var APP = (function ($, ICHIMOKU, DONCHIAN, ATR) {
 
 	// ==========================================================================
@@ -176,7 +177,7 @@ var APP = (function ($, ICHIMOKU, DONCHIAN, ATR) {
 		initData: initData
 	};
 
-})(jQuery, ICHIMOKU, DONCHIAN, ATR);
+})(jQuery, ICHIMOKU, DONCHIAN, ATR); // end APP Module
 
 $(document).ready( function () {
 	

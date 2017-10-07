@@ -1,3 +1,4 @@
+// SCREENER Module
 var SCREENER = (function () {
 
 	// ==========================================================================
@@ -109,4 +110,4 @@ var SCREENER = (function () {
 		getHLOC: getHLOC,
 	};
 
-})(); // end SCREENER API
+})(); // end SCREENER Module

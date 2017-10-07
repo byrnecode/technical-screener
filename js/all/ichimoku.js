@@ -1,3 +1,4 @@
+// ICHIMOKU Module
 var ICHIMOKU = (function (S) {
 
 	// ==========================================================================
@@ -137,7 +138,9 @@ var ICHIMOKU = (function (S) {
 	// ==========================================================================
 	function getResults (data, lastPrice) {
 
-		if (data.length >= 104) {
+		var dataLength = data.length;
+
+		if (dataLength >= 104) {
 			// set Tenkan-Sen, Kijun-Sen, Senkou-Span-B
 			var tenkanSen = getIchiValue(data, TENKAN_BACKTRACK),
 					kijunSen = getIchiValue(data, KIJUN_BACKTRACK),
@@ -178,7 +181,11 @@ var ICHIMOKU = (function (S) {
 					cloudFuture = getCloudFuture(futureSenkouSpanA, futureSenkouSpanB);
 		} 
 		else {
-			// console.log(`Can't calculate Ichimoku data of ${data[0].code}, only ${data.length} periods.`);
+
+			if (dataLength > 0) {
+				console.log(`Can't calculate Ichimoku data of ${data[0].code}, only ${data.length} periods.`);
+			}
+
 			var failedStatus = 'failed..';
 
 			var tenkanSen = failedStatus,
@@ -213,4 +220,4 @@ var ICHIMOKU = (function (S) {
 		getResults: getResults
 	};
 
-})(SCREENER); // end ICHIMOKU API
+})(SCREENER); // end ICHIMOKU Module

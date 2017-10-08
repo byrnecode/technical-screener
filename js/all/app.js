@@ -115,7 +115,7 @@ var APP = (function ($, ICHIMOKU, DONCHIAN, ATR) {
 
 		var data = dataFilter(historicalData, stock);
 
-		function doneDataFilter(data) {
+		(function doneDataFilter(data) {
 
 			// ICHIMOKU computations
 			// ======================================================================
@@ -150,8 +150,7 @@ var APP = (function ($, ICHIMOKU, DONCHIAN, ATR) {
 			// display caculated values
 			$atrValueContainer.html(atr);
 			
-		}
-		doneDataFilter(data);
+		})(data)
 
 	}
 
